@@ -338,3 +338,37 @@ class VMSCompressionEngine:
         return self._profile_store
 
     @property
+    def job_queue(self) -> JobQueue:
+        return self._job_queue
+
+    def register_profile(
+        self,
+        max_bitrate_kbps: int,
+        keyframe_interval: int,
+        codec_id: int,
+    ) -> Optional[str]:
+        profile = CompressionProfile(
+            profile_id=uuid.uuid4().hex,
+            max_bitrate_kbps=max_bitrate_kbps,
+            keyframe_interval=keyframe_interval,
+            codec_id=codec_id,
+            active=True,
+        )
+        if not self._profile_store.add(profile):
+            return None
+        return self._profile_key(profile)
+
+    def _profile_key(self, profile: CompressionProfile) -> str:
+        raw = f"{profile.max_bitrate_kbps}:{profile.keyframe_interval}:{profile.codec_id}"
+        return hashlib.sha256(raw.encode()).hexdigest()
+
+    def schedule_encode_job(
+        self,
+        content_hash: str,
+        tier_index: int,
+        caller_id: str = "default",
+    ) -> Optional[EncodeJob]:
+        return self._job_queue.schedule(content_hash, tier_index, caller_id)
+
+    def fulfill_job(self, job_id: str) -> bool:
+        return self._job_queue.fulfill(job_id)

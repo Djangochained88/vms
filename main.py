@@ -134,3 +134,37 @@ class CodecRegistry:
     def get_max_kbps(self, codec_id: int) -> int:
         return self._entries.get(codec_id, {}).get("max_kbps", 25000)
 
+    def register(self, codec_id: int, name: str, default_keyframe: int, max_kbps: int) -> None:
+        self._entries[codec_id] = {
+            "name": name,
+            "default_keyframe": default_keyframe,
+            "max_kbps": max_kbps,
+        }
+
+    def list_codecs(self) -> list[tuple[int, str]]:
+        return [(cid, info["name"]) for cid, info in self._entries.items()]
+
+
+# ---------------------------------------------------------------------------
+# Tier manager (bitrate tiers)
+# ---------------------------------------------------------------------------
+
+class TierManager:
+    """Manages bitrate tiers for adaptive streaming."""
+
+    def __init__(self, max_tiers: int = DEFAULT_MAX_TIERS) -> None:
+        self._max_tiers = max_tiers
+        self._tier_bitrate_kbps: list[int] = []
+        self._rebuild_default_tiers()
+
+    def _rebuild_default_tiers(self) -> None:
+        base = [400, 800, 1200, 2400, 4800, 8000, 12000, 18000]
+        self._tier_bitrate_kbps = (base + [22000, 25000])[: self._max_tiers]
+
+    def get_tier_count(self) -> int:
+        return len(self._tier_bitrate_kbps)
+
+    def get_bitrate_for_tier(self, tier_index: int) -> int:
+        if 0 <= tier_index < len(self._tier_bitrate_kbps):
+            return self._tier_bitrate_kbps[tier_index]
+        return 0

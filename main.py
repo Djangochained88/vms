@@ -236,3 +236,37 @@ class JobQueue:
 
     def __init__(
         self,
+        job_slots_per_tier: int = DEFAULT_JOB_SLOTS_PER_TIER,
+        cooldown_seconds: float = DEFAULT_COOLDOWN_SECONDS,
+        max_tiers: int = DEFAULT_MAX_TIERS,
+    ) -> None:
+        self._job_slots = job_slots_per_tier
+        self._cooldown = cooldown_seconds
+        self._max_tiers = max_tiers
+        self._jobs: dict[str, EncodeJob] = {}
+        self._content_processed: set[str] = set()
+        self._last_request_by_caller: dict[str, float] = {}
+        self._slot_counter = 0
+
+    def _next_slot_id(self) -> str:
+        self._slot_counter += 1
+        return f"slot_{self._slot_counter}_{uuid.uuid4().hex[:8]}"
+
+    def can_schedule(self, caller_id: str, content_hash: str) -> tuple[bool, str]:
+        if content_hash in self._content_processed:
+            return False, "content_already_processed"
+        last = self._last_request_by_caller.get(caller_id, 0.0)
+        if time.time() - last < self._cooldown:
+            return False, "cooldown_active"
+        return True, ""
+
+    def schedule(self, content_hash: str, tier_index: int, caller_id: str) -> Optional[EncodeJob]:
+        ok, reason = self.can_schedule(caller_id, content_hash)
+        if not ok:
+            return None
+        if tier_index < 0 or tier_index >= self._max_tiers:
+            return None
+
+        job_id = self._next_slot_id()
+        job = EncodeJob(
+            job_id=job_id,

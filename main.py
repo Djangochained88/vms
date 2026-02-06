@@ -32,3 +32,37 @@ DEFAULT_KEYFRAME_INTERVAL = 48
 
 # ---------------------------------------------------------------------------
 # Enums and data structures
+# ---------------------------------------------------------------------------
+
+class CodecKind(IntEnum):
+    H264 = CODEC_H264_ID
+    H265 = CODEC_H265_ID
+    VP9 = CODEC_VP9_ID
+    AV1 = CODEC_AV1_ID
+
+
+@dataclass
+class CompressionProfile:
+    """Single compression profile: bitrate, keyframe interval, codec."""
+    profile_id: str
+    max_bitrate_kbps: int
+    keyframe_interval: int
+    codec_id: int
+    active: bool = True
+    created_at: float = field(default_factory=time.time)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "profile_id": self.profile_id,
+            "max_bitrate_kbps": self.max_bitrate_kbps,
+            "keyframe_interval": self.keyframe_interval,
+            "codec_id": self.codec_id,
+            "active": self.active,
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> CompressionProfile:
+        return cls(
+            profile_id=data["profile_id"],
+            max_bitrate_kbps=data["max_bitrate_kbps"],

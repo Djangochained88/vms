@@ -304,3 +304,37 @@ class JobQueue:
 # ---------------------------------------------------------------------------
 
 class VMSCompressionEngine:
+    """
+    Video management system: ties together profiles, tiers, and job queue
+    for compression workflows.
+    """
+
+    def __init__(
+        self,
+        max_profiles: int = DEFAULT_MAX_PROFILES,
+        job_slots_per_tier: int = DEFAULT_JOB_SLOTS_PER_TIER,
+        cooldown_seconds: float = DEFAULT_COOLDOWN_SECONDS,
+        max_tiers: int = DEFAULT_MAX_TIERS,
+    ) -> None:
+        self._codec_registry = CodecRegistry()
+        self._tier_manager = TierManager(max_tiers=max_tiers)
+        self._profile_store = ProfileStore(max_profiles=max_profiles)
+        self._job_queue = JobQueue(
+            job_slots_per_tier=job_slots_per_tier,
+            cooldown_seconds=cooldown_seconds,
+            max_tiers=max_tiers,
+        )
+
+    @property
+    def codec_registry(self) -> CodecRegistry:
+        return self._codec_registry
+
+    @property
+    def tier_manager(self) -> TierManager:
+        return self._tier_manager
+
+    @property
+    def profile_store(self) -> ProfileStore:
+        return self._profile_store
+
+    @property

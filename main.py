@@ -66,3 +66,37 @@ class CompressionProfile:
         return cls(
             profile_id=data["profile_id"],
             max_bitrate_kbps=data["max_bitrate_kbps"],
+            keyframe_interval=data["keyframe_interval"],
+            codec_id=data["codec_id"],
+            active=data.get("active", True),
+            created_at=data.get("created_at", time.time()),
+        )
+
+
+@dataclass
+class EncodeJob:
+    """Encode job keyed by content hash and tier."""
+    job_id: str
+    content_hash: str
+    tier_index: int
+    scheduled_at: float
+    nonce: int
+    fulfilled: bool = False
+    fulfilled_at: Optional[float] = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "job_id": self.job_id,
+            "content_hash": self.content_hash,
+            "tier_index": self.tier_index,
+            "scheduled_at": self.scheduled_at,
+            "nonce": self.nonce,
+            "fulfilled": self.fulfilled,
+            "fulfilled_at": self.fulfilled_at,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Content hashing
+# ---------------------------------------------------------------------------
+

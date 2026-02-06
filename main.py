@@ -270,3 +270,37 @@ class JobQueue:
         job_id = self._next_slot_id()
         job = EncodeJob(
             job_id=job_id,
+            content_hash=content_hash,
+            tier_index=tier_index,
+            scheduled_at=time.time(),
+            nonce=self._slot_counter,
+            fulfilled=False,
+        )
+        self._jobs[job_id] = job
+        self._last_request_by_caller[caller_id] = time.time()
+        return job
+
+    def fulfill(self, job_id: str) -> bool:
+        job = self._jobs.get(job_id)
+        if job is None or job.fulfilled:
+            return False
+        job.fulfilled = True
+        job.fulfilled_at = time.time()
+        self._content_processed.add(job.content_hash)
+        return True
+
+    def get_job(self, job_id: str) -> Optional[EncodeJob]:
+        return self._jobs.get(job_id)
+
+    def is_content_processed(self, content_hash: str) -> bool:
+        return content_hash in self._content_processed
+
+    def next_slot_number(self) -> int:
+        return self._slot_counter + 1
+
+
+# ---------------------------------------------------------------------------
+# Main VMS compression engine
+# ---------------------------------------------------------------------------
+
+class VMSCompressionEngine:

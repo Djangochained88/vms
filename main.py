@@ -372,3 +372,37 @@ class VMSCompressionEngine:
 
     def fulfill_job(self, job_id: str) -> bool:
         return self._job_queue.fulfill(job_id)
+
+    def deactivate_profile(self, profile_hash: str) -> bool:
+        return self._profile_store.deactivate(profile_hash)
+
+    def get_profile(self, profile_hash: str) -> Optional[dict[str, Any]]:
+        p = self._profile_store.get(profile_hash)
+        return p.to_dict() if p else None
+
+    def get_job(self, job_id: str) -> Optional[dict[str, Any]]:
+        j = self._job_queue.get_job(job_id)
+        return j.to_dict() if j else None
+
+    def list_tiers(self) -> list[tuple[int, int]]:
+        return list(self._tier_manager.iter_tiers())
+
+    def list_codecs(self) -> list[tuple[int, str]]:
+        return self._codec_registry.list_codecs()
+
+
+# ---------------------------------------------------------------------------
+# Validation helpers
+# ---------------------------------------------------------------------------
+
+def validate_bitrate_kbps(kbps: int) -> bool:
+    return MIN_BITRATE_KBPS <= kbps <= MAX_BITRATE_KBPS
+
+
+def validate_keyframe_interval(interval: int) -> bool:
+    return 1 <= interval <= 600
+
+
+def validate_tier_index(index: int, max_tiers: int) -> bool:
+    return 0 <= index < max_tiers
+

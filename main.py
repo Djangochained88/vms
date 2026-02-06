@@ -168,3 +168,37 @@ class TierManager:
         if 0 <= tier_index < len(self._tier_bitrate_kbps):
             return self._tier_bitrate_kbps[tier_index]
         return 0
+
+    def set_tier_bitrate(self, tier_index: int, kbps: int) -> bool:
+        if tier_index < 0 or tier_index >= self._max_tiers:
+            return False
+        if kbps < MIN_BITRATE_KBPS or kbps > MAX_BITRATE_KBPS:
+            return False
+        while len(self._tier_bitrate_kbps) <= tier_index:
+            self._tier_bitrate_kbps.append(MIN_BITRATE_KBPS)
+        self._tier_bitrate_kbps[tier_index] = kbps
+        return True
+
+    def iter_tiers(self) -> Iterator[tuple[int, int]]:
+        for i, kbps in enumerate(self._tier_bitrate_kbps):
+            yield i, kbps
+
+
+# ---------------------------------------------------------------------------
+# Profile store
+# ---------------------------------------------------------------------------
+
+class ProfileStore:
+    """In-memory store of compression profiles keyed by profile hash."""
+
+    def __init__(self, max_profiles: int = DEFAULT_MAX_PROFILES) -> None:
+        self._max_profiles = max_profiles
+        self._by_hash: dict[str, CompressionProfile] = {}
+        self._order: list[str] = []
+
+    def add(self, profile: CompressionProfile) -> bool:
+        key = self._profile_key(profile)
+        if key in self._by_hash:
+            return False
+        if len(self._by_hash) >= self._max_profiles:
+            return False

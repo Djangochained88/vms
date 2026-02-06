@@ -202,3 +202,37 @@ class ProfileStore:
             return False
         if len(self._by_hash) >= self._max_profiles:
             return False
+        self._by_hash[key] = profile
+        self._order.append(key)
+        return True
+
+    def _profile_key(self, profile: CompressionProfile) -> str:
+        raw = f"{profile.max_bitrate_kbps}:{profile.keyframe_interval}:{profile.codec_id}"
+        return hashlib.sha256(raw.encode()).hexdigest()
+
+    def get(self, profile_hash: str) -> Optional[CompressionProfile]:
+        return self._by_hash.get(profile_hash)
+
+    def deactivate(self, profile_hash: str) -> bool:
+        p = self._by_hash.get(profile_hash)
+        if p is None or not p.active:
+            return False
+        p.active = False
+        return True
+
+    def active_count(self) -> int:
+        return sum(1 for p in self._by_hash.values() if p.active)
+
+    def list_active(self) -> list[CompressionProfile]:
+        return [p for p in self._by_hash.values() if p.active]
+
+
+# ---------------------------------------------------------------------------
+# Job queue
+# ---------------------------------------------------------------------------
+
+class JobQueue:
+    """Queue of encode jobs with cooldown and content-hash deduplication."""
+
+    def __init__(
+        self,

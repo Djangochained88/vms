@@ -406,3 +406,37 @@ def validate_keyframe_interval(interval: int) -> bool:
 def validate_tier_index(index: int, max_tiers: int) -> bool:
     return 0 <= index < max_tiers
 
+
+# ---------------------------------------------------------------------------
+# Batch operations
+# ---------------------------------------------------------------------------
+
+def batch_register_profiles(
+    engine: VMSCompressionEngine,
+    specs: list[tuple[int, int, int]],
+) -> list[Optional[str]]:
+    """Register multiple profiles; returns list of profile hashes or None."""
+    result: list[Optional[str]] = []
+    for max_kbps, keyframe, codec_id in specs:
+        h = engine.register_profile(max_kbps, keyframe, codec_id)
+        result.append(h)
+    return result
+
+
+def batch_schedule_jobs(
+    engine: VMSCompressionEngine,
+    content_hashes: list[str],
+    tier_index: int,
+    caller_id: str = "batch",
+) -> list[Optional[EncodeJob]]:
+    """Schedule one job per content hash at the given tier."""
+    return [
+        engine.schedule_encode_job(ch, tier_index, caller_id)
+        for ch in content_hashes
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Reporting / stats
+# ---------------------------------------------------------------------------
+

@@ -100,3 +100,37 @@ class EncodeJob:
 # Content hashing
 # ---------------------------------------------------------------------------
 
+def content_hash_from_bytes(data: bytes) -> str:
+    """Produce a deterministic content hash (hex) for raw bytes."""
+    return hashlib.sha256(data).hexdigest()
+
+
+def content_hash_from_string(s: str) -> str:
+    """Produce content hash for a string (e.g. path or identifier)."""
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Codec registry
+# ---------------------------------------------------------------------------
+
+class CodecRegistry:
+    """Maps codec IDs to names and default settings."""
+
+    def __init__(self) -> None:
+        self._entries: dict[int, dict[str, Any]] = {
+            CODEC_H264_ID: {"name": "H.264", "default_keyframe": 48, "max_kbps": 20000},
+            CODEC_H265_ID: {"name": "H.265", "default_keyframe": 96, "max_kbps": 25000},
+            CODEC_VP9_ID: {"name": "VP9", "default_keyframe": 72, "max_kbps": 18000},
+            CODEC_AV1_ID: {"name": "AV1", "default_keyframe": 120, "max_kbps": 22000},
+        }
+
+    def get_name(self, codec_id: int) -> str:
+        return self._entries.get(codec_id, {}).get("name", "unknown")
+
+    def get_default_keyframe_interval(self, codec_id: int) -> int:
+        return self._entries.get(codec_id, {}).get("default_keyframe", 48)
+
+    def get_max_kbps(self, codec_id: int) -> int:
+        return self._entries.get(codec_id, {}).get("max_kbps", 25000)
+

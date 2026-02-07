@@ -440,3 +440,34 @@ def batch_schedule_jobs(
 # Reporting / stats
 # ---------------------------------------------------------------------------
 
+def engine_stats(engine: VMSCompressionEngine) -> dict[str, Any]:
+    """Return a summary of engine state."""
+    return {
+        "active_profiles": engine.profile_store.active_count(),
+        "tier_count": engine.tier_manager.get_tier_count(),
+        "next_slot": engine.job_queue.next_slot_number(),
+        "codecs": engine.list_codecs(),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Example / runner
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    engine = VMSCompressionEngine()
+    h = content_hash_from_string("sample_video_001.mp4")
+    job = engine.schedule_encode_job(h, tier_index=2, caller_id="user_1")
+    if job:
+        print("Scheduled job:", job.job_id, job.content_hash[:16], "...")
+        engine.fulfill_job(job.job_id)
+        print("Fulfilled.")
+    for tier_idx, kbps in engine.list_tiers():
+        print(f"Tier {tier_idx}: {kbps} kbps")
+    for codec_id, name in engine.list_codecs():
+        print(f"Codec {codec_id}: {name}")
+
+
+if __name__ == "__main__":
+    main()
+
